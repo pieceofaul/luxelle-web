@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Luxelle Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8); min-height: 100vh; display: flex; align-items: center; }
+        .register-card { border-radius: 20px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        .btn-luxelle { background-color: #8D6E63; color: white; border-radius: 20px; border: none; padding: 12px; font-weight: bold; }
+        .btn-luxelle:hover { background-color: #6D4C41; color: white; }
+        .form-control { border-radius: 15px; padding: 10px; border: 1px solid #EFEBE9; }
+        .role-selector { background: #F3EFEA; border-radius: 30px; padding: 5px; display: flex; }
+        .role-btn { flex: 1; border: none; background: none; padding: 8px; border-radius: 25px; transition: 0.3s; color: #6D4C41; }
+        .role-btn.active { background: white; color: #3E2723; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+    <div class="container d-flex justify-content-center">
+        <div class="card register-card p-4">
+            <div class="text-center mb-3">
+                <h3 class="fw-bold" style="color: #3E2723;">Create Account</h3>
+                <p class="text-muted small">Join Luxelle Bakery</p>
+            </div>
+
+            <div id="error-box" class="alert alert-danger d-none small p-2"></div>
+
+            <div class="mb-2">
+                <label class="small fw-bold mb-1">Full Name</label>
+                <input type="text" id="reg-name" class="form-control" placeholder="Your name">
+            </div>
+            <div class="mb-2">
+                <label class="small fw-bold mb-1">Email</label>
+                <input type="email" id="reg-email" class="form-control" placeholder="you@example.com">
+            </div>
+            <div class="mb-2">
+                <label class="small fw-bold mb-1">Password</label>
+                <input type="password" id="reg-password" class="form-control" placeholder="••••••••">
+            </div>
+            <div class="mb-3">
+                <label class="small fw-bold mb-1">Confirm Password</label>
+                <input type="password" id="reg-confirm" class="form-control" placeholder="••••••••">
+            </div>
+
+            <label class="small fw-bold mb-2">Register as</label>
+            <div class="role-selector mb-3">
+                <button type="button" class="role-btn active" onclick="setRole('Customer', this)">Customer</button>
+                <button type="button" class="role-btn" onclick="setRole('Admin', this)">Admin</button>
+            </div>
+
+            <div class="form-check mb-4 bg-light p-3 rounded shadow-sm" style="margin-left: 0; padding-left: 2.5rem;">
+                <input class="form-check-input" type="checkbox" id="agree-check">
+                <label class="form-check-label small" for="agree-check">
+                    I agree to the terms and conditions.
+                </label>
+            </div>
+
+            <button id="reg-btn" onclick="handleRegister()" class="btn btn-luxelle w-100">Create Account</button>
+
+            <p class="text-center small mt-3 mb-0">
+                Already have an account? <a href="login.html" style="color: #8D6E63; font-weight: bold; text-decoration: none;">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _supabase = supabase.createClient('https://bnjjclwlxlrtduupunfw.supabase.co', 'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9');
+        
+        let selectedRole = 'Customer';
+
+        function setRole(role, btn) {
+            selectedRole = role;
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        async function handleRegister() {
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const agree = document.getElementById('agree-check').checked;
+            const errorBox = document.getElementById('error-box');
+            const btn = document.getElementById('reg-btn');
+
+            // Validasi Sederhana (Mirip registerPage.dart baris 26-40)
+            if (!name || !email || !password || !confirm) return showError("All fields must be filled.");
+            if (password !== confirm) return showError("Passwords do not match.");
+            if (!agree) return showError("You must agree to the terms.");
+
+            btn.disabled = true;
+            btn.innerText = "Creating account...";
+            errorBox.classList.add('d-none');
+
+            try {
+                // Proses Sign Up
+                const { data, error } = await _supabase.auth.signUp({ 
+                    email: email, 
+                    password: password 
+                });
+
+                if (error) throw error;
+
+                // Masukkan data ke tabel profiles (Mirip registerPage.dart baris 91-97)
+                const { error: profError } = await _supabase.from('profiles').insert({
+                    user_id: data.user.id,
+                    name: name,
+                    email: email,
+                    role: selectedRole,
+                    created_at: new Date().toISOString()
+                });
+
+                if (profError) throw profError;
+
+                alert("Registration successful! Please log in.");
+                window.location.href = 'login.html';
+
+            } catch (err) {
+                showError(err.message);
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.innerText = msg;
+            errorBox.classList.remove('d-none');
+        }
+    </script>
+</body>
+</html>

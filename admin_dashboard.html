@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Luxelle Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --brown-luxelle: #8D6E63; --bg-light: #FBF8F3; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; padding-bottom: 70px; }
+        .bg-luxelle { background-color: var(--brown-luxelle) !important; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-item { border: none; background: none; color: #BDBDBD; transition: 0.3s; text-align: center; flex: 1; }
+        .nav-item.active { color: var(--brown-luxelle); }
+        .nav-item i { display: block; font-size: 20px; }
+        .nav-item span { font-size: 10px; font-weight: 500; }
+        .content-section { display: none; padding: 20px; }
+        .content-section.active { display: block; }
+        .stat-card { border: none; border-radius: 20px; padding: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .text-luxelle { color: var(--brown-luxelle); }
+        .table-custom { background: white; border-radius: 15px; overflow: hidden; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div id="home" class="content-section active">
+        <h4 class="fw-bold mb-1" id="admin-welcome">Welcome, Admin!</h4>
+        <p class="text-muted small mb-4">Luxelle Bakery Management System</p>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="stat-card">
+                    <i class="fas fa-shopping-bag mb-2 text-warning"></i>
+                    <h6 class="text-muted small">Total Orders</h6>
+                    <h3 id="count-po" class="fw-bold mb-0">0</h3>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card text-center">
+                    <i class="fas fa-users mb-2 text-info"></i>
+                    <h6 class="text-muted small">Customer Users</h6>
+                    <h3 id="count-users-total" class="fw-bold mb-0">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <h6 class="fw-bold">Management Tools</h6>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-brown btn-sm shadow-sm flex-fill" onclick="downloadCSVTemplate()"><i class="fas fa-download me-1"></i> Template CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orders" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold m-0">Pre-Order List</h5></div>
+        <div id="order-list"></div>
+    </div>
+
+    <div id="menu" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold m-0">Manage Menu</h5>
+            <button class="btn btn-luxelle btn-sm rounded-pill px-3" onclick="toggleMenuForm()"><i class="fas fa-plus me-1"></i> Add New</button>
+        </div>
+        <div id="menu-form" class="stat-card mb-4 d-none">
+            <h6 id="form-title" class="fw-bold mb-3">Add New Item</h6>
+            <input type="hidden" id="edit-menu-id">
+            <input type="hidden" id="edit-menu-img-url-hidden">
+            <div class="mb-2"><input type="text" id="menu-name" class="form-control" placeholder="Item Name"></div>
+            <div class="mb-2"><input type="number" id="menu-price" class="form-control" placeholder="Price (Rp)"></div>
+            <div class="mb-2">
+                <select id="menu-category" class="form-select">
+                    <option value="Bread">Bread</option>
+                    <option value="Cookies">Cookies</option>
+                    <option value="Cake & Desserts">Cake & Desserts</option>
+                    <option value="Pastry">Pastry</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="small fw-bold mb-1">Menu Image</label>
+                <input type="file" id="menu-file" class="form-control" accept="image/*">
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-luxelle flex-fill" onclick="saveMenu()">Save Item</button>
+                <button class="btn btn-light flex-fill" onclick="toggleMenuForm()">Cancel</button>
+            </div>
+        </div>
+        <div class="row g-2" id="menu-grid"></div>
+    </div>
+
+    <div id="accounts" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold m-0">User Management</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-success" onclick="exportToCSV()"><i class="fas fa-file-export"></i> Export</button>
+                <label for="import-csv" class="btn btn-sm btn-primary m-0"><i class="fas fa-file-import"></i> Import</label>
+                <input type="file" id="import-csv" hidden accept=".csv" onchange="importFromCSV(event)">
+            </div>
+        </div>
+
+        <div class="table-responsive shadow-sm table-custom">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    <tr><td colspan="4" class="text-center py-4 text-muted">Loading customer users...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="profile" class="content-section text-center">
+        <h5 class="fw-bold mb-4">Admin Profile</h5>
+        <div class="stat-card py-5 shadow-sm">
+            <img id="admin-photo" src="https://via.placeholder.com/100" class="rounded-circle shadow mb-3" width="100" height="100" style="object-fit: cover;">
+            <h5 id="prof-name" class="fw-bold">-</h5>
+            <p id="prof-email" class="text-muted small mb-3">-</p>
+            <button class="btn btn-outline-danger w-100 rounded-pill" onclick="handleLogout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="showPage('home', this)"><i class="fas fa-home"></i><span>Home</span></button>
+        <button class="nav-item" onclick="showPage('orders', this)"><i class="fas fa-receipt"></i><span>Orders</span></button>
+        <button class="nav-item" onclick="showPage('menu', this)"><i class="fas fa-cookie"></i><span>Menu</span></button>
+        <button class="nav-item" onclick="showPage('accounts', this)"><i class="fas fa-users-cog"></i><span>Accounts</span></button>
+        <button class="nav-item" onclick="showPage('profile', this)"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _supabase = supabase.createClient('https://bnjjclwlxlrtduupunfw.supabase.co', 'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9');
+        let adminUser = null;
+        let allUsersData = []; 
+
+        window.onload = async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) window.location.href = 'login.html';
+            adminUser = session.user;
+            fetchDashboardData();
+            loadProfile();
+        };
+
+        function showPage(pageId, btn) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if(btn) btn.classList.add('active');
+            if(pageId === 'menu') fetchMenus();
+            if(pageId === 'orders') fetchOrders();
+            if(pageId === 'accounts') fetchUsers();
+        }
+
+        async function fetchDashboardData() {
+            const { count: po } = await _supabase.from('po').select('*', { count: 'exact', head: true });
+            const { count: menu } = await _supabase.from('menu').select('*', { count: 'exact', head: true });
+            const { count: users } = await _supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('user_id', adminUser.id);
+            document.getElementById('count-po').innerText = po || 0;
+            document.getElementById('count-menu').innerText = menu || 0;
+            if(document.getElementById('count-users-total')) document.getElementById('count-users-total').innerText = users || 0;
+        }
+
+        async function fetchUsers() {
+            const { data, error } = await _supabase.from('profiles').select('*').neq('user_id', adminUser.id).order('name');
+            if (error) return;
+            allUsersData = data;
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = data.map(u => `
+                <tr>
+                    <td><div class="fw-bold">${u.name || 'Anonymous'}</div></td>
+                    <td>${u.email || '-'}</td>
+                    <td><span class="badge ${u.role === 'Member' ? 'bg-success' : 'bg-secondary'}">${u.role || 'Basic'}</span></td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" onchange="updateUserRole('${u.user_id}', this.value)">
+                                <option value="Basic" ${u.role !== 'Member' ? 'selected' : ''}>Basic</option>
+                                <option value="Member" ${u.role === 'Member' ? 'selected' : ''}>Member</option>
+                            </select>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUserAccount('${u.user_id}', '${u.name}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteUserAccount(uid, name) {
+            if (!confirm(`Hapus profil ${name}? User tidak akan bisa login.`)) return;
+            const { error } = await _supabase.from('profiles').delete().eq('user_id', uid);
+            if (!error) { alert("Profil dihapus!"); fetchUsers(); fetchDashboardData(); }
+        }
+
+        async function updateUserRole(uid, newRole) {
+            const { error } = await _supabase.from('profiles').update({ role: newRole }).eq('user_id', uid);
+            if(!error) { alert("Role diperbarui!"); fetchDashboardData(); fetchUsers(); }
+        }
+
+        // --- CSV IMPORT LOGIC (FIXED FOR BULK INSERT/UPSERT) ---
+async function importFromCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const rows = e.target.result
+                .split(/\r?\n/)
+                .filter(r => r.trim());
+
+            if (rows.length < 2)
+                throw new Error("CSV kosong");
+
+            const headers = rows[0].toLowerCase().split(",");
+            const nameIdx = headers.indexOf("name");
+            const emailIdx = headers.indexOf("email");
+            const roleIdx = headers.indexOf("role");
+
+            if (emailIdx === -1 || roleIdx === -1)
+                throw new Error("Kolom Email & Role wajib ada");
+
+            let success = 0;
+            let notFound = [];
+
+            for (let i = 1; i < rows.length; i++) {
+                const cols = rows[i]
+                    .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+                    .map(c => c.replace(/"/g, "").trim());
+
+                const email = cols[emailIdx];
+                if (!email) continue;
+
+                const name = nameIdx !== -1 ? cols[nameIdx] : null;
+                let role = cols[roleIdx] || "Basic";
+                role = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+
+                const { data, error } = await _supabase
+                    .from("profiles")
+                    .update({ name, role })
+                    .eq("email", email)
+                    .select(); // 🔥 PENTING
+
+                if (error) continue;
+
+                if (data.length === 0) {
+                    notFound.push(email); // ❌ email ga ketemu
+                } else {
+                    success++;
+                }
+            }
+
+            let message = `✅ ${success} user berhasil di-update`;
+            if (notFound.length > 0) {
+                message += `\n\n❌ ${notFound.length} email tidak ditemukan:\n- ` +
+                           notFound.join("\n- ");
+            }
+
+            alert(message);
+            fetchUsers();
+            fetchDashboardData();
+            event.target.value = "";
+
+        } catch (err) {
+            alert("❌ Gagal import: " + err.message);
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+        function exportToCSV() {
+            if (allUsersData.length === 0) return alert("Data kosong");
+            let csv = "Name,Email,Role\n" + allUsersData.map(u => `"${u.name}","${u.email}","${u.role || 'Basic'}"`).join("\n");
+            const link = document.createElement("a");
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            link.download = 'luxelle_customers.csv';
+            link.click();
+        }
+
+        function downloadCSVTemplate() {
+            const csv = "Name,Email,Role\nCustomer Baru,customer@email.com,Member";
+            const link = document.createElement("a");
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            link.download = 'template_import_user.csv';
+            link.click();
+        }
+
+        // --- ORDER, MENU, PROFILE LOGICS ---
+        async function fetchOrders() {
+            const { data } = await _supabase.from('po').select('*, profiles(name), po_menu(qty, menu(name))').order('id', {ascending: false});
+            const container = document.getElementById('order-list');
+            container.innerHTML = data.map(o => {
+                const items = o.po_menu.map(i => `${i.menu?.name || 'Item'} (x${i.qty})`).join(', ');
+                return `<div class="stat-card mb-2 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><b>Order #${o.id} - ${o.profiles?.name || 'Guest'}</b></div>
+                        <span class="badge bg-light text-brown">${o.status}</span>
+                    </div>
+                    <div class="small text-muted mt-1">Items: ${items}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleMenuForm() { document.getElementById('menu-form').classList.toggle('d-none'); }
+
+        async function fetchMenus() {
+            const { data } = await _supabase.from('menu').select('*').order('id', { ascending: false });
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = data.map(m => `
+                <div class="col-6 col-md-4">
+                    <div class="stat-card p-2 text-center h-100 shadow-sm border">
+                        <img src="${m.img_url || 'https://via.placeholder.com/150'}" class="rounded-3 w-100 mb-2" style="height:100px; object-fit:cover;">
+                        <div class="small fw-bold text-truncate">${m.name}</div>
+                        <div class="text-luxelle small mb-2">Rp ${m.price.toLocaleString()}</div>
+                        <div class="d-flex gap-1 justify-content-center">
+                            <button class="btn btn-sm btn-warning p-1 rounded-circle" style="width:30px; height:30px;" onclick='prepareEditMenu(${JSON.stringify(m)})'><i class="fas fa-edit fa-xs text-white"></i></button>
+                            <button class="btn btn-sm btn-danger p-1 rounded-circle" style="width:30px; height:30px;" onclick="deleteMenu(${m.id})"><i class="fas fa-trash fa-xs text-white"></i></button>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+
+        async function saveMenu() {
+            const name = document.getElementById('menu-name').value;
+            const price = document.getElementById('menu-price').value;
+            const category = document.getElementById('menu-category').value;
+            const fileInput = document.getElementById('menu-file');
+            if(!name || !price) return alert("Isi Nama & Harga!");
+            try {
+                let img_url = document.getElementById('edit-menu-img-url-hidden').value;
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileName = `menu_${Date.now()}.${file.name.split('.').pop()}`;
+                    const { error: uploadError } = await _supabase.storage.from('menu').upload(fileName, file);
+                    if (uploadError) throw uploadError;
+                    const { data: urlData } = _supabase.storage.from('menu').getPublicUrl(fileName);
+                    img_url = urlData.publicUrl;
+                }
+                const menuData = { name, price: parseInt(price), category, img_url };
+                const id = document.getElementById('edit-menu-id').value;
+                if(id) await _supabase.from('menu').update(menuData).eq('id', id);
+                else await _supabase.from('menu').insert([menuData]);
+                alert("Berhasil!"); toggleMenuForm(); fetchMenus(); fetchDashboardData();
+            } catch (e) { alert("Gagal: " + e.message); }
+        }
+
+        function prepareEditMenu(menu) {
+            toggleMenuForm();
+            document.getElementById('form-title').innerText = "Edit Item";
+            document.getElementById('edit-menu-id').value = menu.id;
+            document.getElementById('menu-name').value = menu.name;
+            document.getElementById('menu-price').value = menu.price;
+            document.getElementById('menu-category').value = menu.category;
+            document.getElementById('edit-menu-img-url-hidden').value = menu.img_url || '';
+        }
+
+        async function deleteMenu(id) {
+            if(confirm("Hapus menu ini?")) { await _supabase.from('menu').delete().eq('id', id); fetchMenus(); fetchDashboardData(); }
+        }
+
+        async function loadProfile() {
+            const { data: prof } = await _supabase.from('profiles').select('*').eq('user_id', adminUser.id).single();
+            if(prof) {
+                document.getElementById('prof-name').innerText = prof.name;
+                document.getElementById('prof-email').innerText = adminUser.email;
+                if(prof.avatar_url) document.getElementById('admin-photo').src = prof.avatar_url;
+            }
+        }
+
+        async function handleLogout() { await _supabase.auth.signOut(); window.location.href = 'login.html'; }
+    </script>
+</body>
+</html>
