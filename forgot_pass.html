@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password - Luxelle Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8); min-height: 100vh; display: flex; align-items: center; }
+        .reset-card { border-radius: 20px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: auto; }
+        .btn-luxelle { background-color: #8D6E63; color: white; border-radius: 20px; border: none; padding: 12px; }
+        .form-control { border-radius: 15px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container d-flex justify-content-center">
+        <div class="card reset-card p-4">
+            <h4 class="fw-bold text-center mb-3" style="color: #3E2723;">Reset Password</h4>
+            <p id="instruction" class="text-muted text-center small mb-4">Enter your email to receive a reset OTP</p>
+
+            <div id="error-box" class="alert alert-danger d-none small"></div>
+
+            <div id="step-1">
+                <div class="mb-4">
+                    <label class="small fw-bold mb-1">Email Address</label>
+                    <input type="email" id="reset-email" class="form-control" placeholder="you@example.com">
+                </div>
+                <button onclick="sendOtp()" id="btn-otp" class="btn btn-luxelle w-100">Send OTP</button>
+            </div>
+
+            <div id="step-2" class="d-none">
+                <div class="mb-3">
+                    <label class="small fw-bold mb-1">OTP Code</label>
+                    <input type="text" id="otp-code" class="form-control" placeholder="Enter OTP">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold mb-1">New Password</label>
+                    <input type="password" id="new-password" class="form-control" placeholder="••••••••">
+                </div>
+                <button onclick="resetPassword()" id="btn-reset" class="btn btn-luxelle w-100">Update Password</button>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="login.html" class="small fw-bold text-decoration-none" style="color: #8D6E63;">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _supabase = supabase.createClient('https://bnjjclwlxlrtduupunfw.supabase.co', 'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9');
+
+        async function sendOtp() {
+            const email = document.getElementById('reset-email').value;
+            const btn = document.getElementById('btn-otp');
+            
+            btn.disabled = true;
+            try {
+                const { error } = await _supabase.auth.resetPasswordForEmail(email);
+                if (error) throw error;
+                
+                document.getElementById('step-1').classList.add('d-none');
+                document.getElementById('step-2').classList.remove('d-none');
+                document.getElementById('instruction').innerText = "Enter the OTP sent to your email";
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false;
+            }
+        }
+
+        async function resetPassword() {
+            const otp = document.getElementById('otp-code').value;
+            const newPass = document.getElementById('new-password').value;
+            const email = document.getElementById('reset-email').value;
+            
+            try {
+                const { error: verifyError } = await _supabase.auth.verifyOTP({
+                    email: email,
+                    token: otp,
+                    type: 'recovery'
+                });
+                if (verifyError) throw verifyError;
+
+                const { error: updateError } = await _supabase.auth.updateUser({ password: newPass });
+                if (updateError) throw updateError;
+
+                alert("Password updated successfully!");
+                window.location.href = 'login.html';
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    </script>
+</body>
+</html>

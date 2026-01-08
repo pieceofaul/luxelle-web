@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Luxelle Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --brown-luxelle: #8D6E63; --bg-light: #FBF8F3; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; padding-bottom: 70px; }
+        .bg-luxelle { background-color: var(--brown-luxelle) !important; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; }
+        .nav-item { border: none; background: none; color: #BDBDBD; transition: 0.3s; text-align: center; flex: 1; }
+        .nav-item.active { color: var(--brown-luxelle); }
+        .nav-item i { display: block; font-size: 20px; }
+        .nav-item span { font-size: 10px; font-weight: 500; }
+        .content-section { display: none; padding: 20px; }
+        .content-section.active { display: block; }
+        .stat-card { border: none; border-radius: 20px; padding: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .text-luxelle { color: var(--brown-luxelle); }
+    </style>
+</head>
+<body>
+
+    <div id="home" class="content-section active">
+        <h4 class="fw-bold mb-1" id="admin-welcome">Welcome, Admin!</h4>
+        <p class="text-muted small mb-4">Luxelle Bakery Management System</p>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="stat-card">
+                    <i class="fas fa-shopping-bag mb-2 text-warning"></i>
+                    <h6 class="text-muted small">Total Orders</h6>
+                    <h3 id="count-po" class="fw-bold mb-0">0</h3>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card">
+                    <i class="fas fa-cake mb-2 text-danger"></i>
+                    <h6 class="text-muted small">Active Menu</h6>
+                    <h3 id="count-menu" class="fw-bold mb-0">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <h6 class="fw-bold">Quick Actions</h6>
+            <div class="d-flex gap-2">
+                <button class="btn btn-white shadow-sm border-0 p-3 rounded-4 flex-fill" onclick="showPage('orders')"><i class="fas fa-receipt d-block mb-1 text-primary"></i> <span class="small">Check Orders</span></button>
+                <button class="btn btn-white shadow-sm border-0 p-3 rounded-4 flex-fill" onclick="showPage('menu')"><i class="fas fa-plus d-block mb-1 text-success"></i> <span class="small">Add Menu</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orders" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold m-0">Pre-Order List</h5></div>
+        <div id="order-list"></div>
+    </div>
+
+    <div id="menu" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold m-0">Manage Menu</h5>
+            <button class="btn btn-luxelle btn-sm rounded-pill px-3" onclick="toggleMenuForm()"><i class="fas fa-plus me-1"></i> Add New</button>
+        </div>
+
+        <div id="menu-form" class="stat-card mb-4 d-none">
+            <h6 id="form-title" class="fw-bold mb-3">Add New Item</h6>
+            <input type="hidden" id="edit-menu-id">
+            <input type="hidden" id="edit-menu-img-url-hidden"> <div class="mb-2"><input type="text" id="menu-name" class="form-control" placeholder="Item Name"></div>
+            <div class="mb-2"><input type="number" id="menu-price" class="form-control" placeholder="Price (Rp)"></div>
+            <div class="mb-2">
+                <select id="menu-category" class="form-select">
+                    <option value="Bread">Bread</option>
+                    <option value="Cookies">Cookies</option>
+                    <option value="Cake & Desserts">Cake & Desserts</option>
+                    <option value="Pastry">Pastry</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="small fw-bold mb-1">Menu Image</label>
+                <input type="file" id="menu-file" class="form-control" accept="image/*">
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-luxelle flex-fill" onclick="saveMenu()">Save Item</button>
+                <button class="btn btn-light flex-fill" onclick="toggleMenuForm()">Cancel</button>
+            </div>
+        </div>
+        <div class="row g-2" id="menu-grid"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="showPage('home', this)"><i class="fas fa-th-large"></i><span>Home</span></button>
+        <button class="nav-item" onclick="showPage('orders', this)"><i class="fas fa-receipt"></i><span>Orders</span></button>
+        <button class="nav-item" onclick="showPage('menu', this)"><i class="fas fa-cake-candles"></i><span>Menu</span></button>
+        <button class="nav-item" onclick="showPage('profile', this)"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _supabase = supabase.createClient('https://bnjjclwlxlrtduupunfw.supabase.co', 'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9');
+        let adminUser = null;
+
+        window.onload = async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) window.location.href = 'login.html';
+            adminUser = session.user;
+            fetchDashboardData();
+            loadProfile();
+        };
+
+        function showPage(pageId, btn) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if(btn) btn.classList.add('active');
+            if(pageId === 'menu') fetchMenus();
+            if(pageId === 'orders') fetchOrders();
+        }
+
+        async function fetchDashboardData() {
+            const { count: po } = await _supabase.from('po').select('*', { count: 'exact', head: true });
+            const { count: menu } = await _supabase.from('menu').select('*', { count: 'exact', head: true });
+            document.getElementById('count-po').innerText = po || 0;
+            document.getElementById('count-menu').innerText = menu || 0;
+        }
+
+        function toggleMenuForm() {
+            const form = document.getElementById('menu-form');
+            form.classList.toggle('d-none');
+            if(form.classList.contains('d-none')) {
+                document.getElementById('edit-menu-id').value = '';
+                document.getElementById('menu-name').value = '';
+                document.getElementById('menu-price').value = '';
+                document.getElementById('menu-file').value = '';
+                document.getElementById('edit-menu-img-url-hidden').value = '';
+            }
+        }
+
+        async function fetchMenus() {
+            const { data } = await _supabase.from('menu').select('*').order('id', { ascending: false });
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = data.map(m => `
+                <div class="col-6 col-md-4">
+                    <div class="stat-card p-2 text-center h-100 shadow-sm border">
+                        <img src="${m.img_url || 'https://via.placeholder.com/150'}" class="rounded-3 w-100 mb-2" style="height:100px; object-fit:cover;">
+                        <div class="small fw-bold text-truncate">${m.name}</div>
+                        <div class="text-luxelle small mb-2">Rp ${m.price.toLocaleString()}</div>
+                        <div class="d-flex gap-1 justify-content-center">
+                            <button class="btn btn-sm btn-warning p-1 rounded-circle" style="width:30px; height:30px;" onclick='prepareEditMenu(${JSON.stringify(m)})'><i class="fas fa-edit fa-xs text-white"></i></button>
+                            <button class="btn btn-sm btn-danger p-1 rounded-circle" style="width:30px; height:30px;" onclick="deleteMenu(${m.id})"><i class="fas fa-trash fa-xs text-white"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveMenu() {
+            const id = document.getElementById('edit-menu-id').value;
+            const name = document.getElementById('menu-name').value;
+            const price = document.getElementById('menu-price').value;
+            const category = document.getElementById('menu-category').value;
+            const fileInput = document.getElementById('menu-file');
+            
+            if(!name || !price) return alert("Isi Nama & Harga!");
+
+            try {
+                // Gunakan URL lama jika tidak upload baru (Mirip adminMenuPage.dart)
+                let img_url = document.getElementById('edit-menu-img-url-hidden').value;
+
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileName = `menu_${Date.now()}.${file.name.split('.').pop()}`;
+                    
+                    // Upload ke bucket 'menu' (Mirip adminMenuPage.dart:88)
+                    const { data: uploadData, error: uploadError } = await _supabase.storage
+                        .from('menu')
+                        .upload(fileName, file);
+                    if (uploadError) throw uploadError;
+
+                    const { data: urlData } = _supabase.storage.from('menu').getPublicUrl(fileName);
+                    img_url = urlData.publicUrl;
+                }
+
+                const menuData = { name, price: parseInt(price), category, img_url };
+
+                if(id) {
+                    await _supabase.from('menu').update(menuData).eq('id', id);
+                } else {
+                    await _supabase.from('menu').insert([menuData]);
+                }
+
+                alert("Berhasil!");
+                toggleMenuForm();
+                fetchMenus();
+                fetchDashboardData();
+            } catch (e) { alert("Gagal: " + e.message); }
+        }
+
+        function prepareEditMenu(menu) {
+            toggleMenuForm();
+            document.getElementById('form-title').innerText = "Edit Item";
+            document.getElementById('edit-menu-id').value = menu.id;
+            document.getElementById('menu-name').value = menu.name;
+            document.getElementById('menu-price').value = menu.price;
+            document.getElementById('menu-category').value = menu.category;
+            document.getElementById('edit-menu-img-url-hidden').value = menu.img_url || '';
+        }
+
+        async function deleteMenu(id) {
+            if(confirm("Hapus menu ini?")) {
+                await _supabase.from('menu').delete().eq('id', id);
+                fetchMenus();
+            }
+        }
+
+        async function loadProfile() {
+            const { data: prof } = await _supabase.from('profiles').select('*').eq('user_id', adminUser.id).single();
+            if(prof) {
+                document.getElementById('prof-name').innerText = prof.name;
+                document.getElementById('prof-email').innerText = adminUser.email;
+                if(prof.avatar_url) document.getElementById('admin-photo').src = prof.avatar_url;
+            }
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
