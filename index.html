@@ -3,18 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxelle Bakery</title>
+    <title>Luxelle Bakery - Splash Screen</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #FBF8F3; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .splash-logo { text-align: center; animation: fadeIn 2s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { 
+            background: linear-gradient(to bottom, #FBF8F3, #FFFDEB); 
+            height: 100vh; 
+            margin: 0;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .splash-container {
+            text-align: center;
+            animation: fadeIn 1.5s ease-in-out;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* Logo Croissant melingkar */
+        .logo-circle {
+            background-color: #EFEBE9;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .logo-circle i {
+            color: #8D6E63;
+            font-size: 50px;
+        }
+
+        h1 {
+            color: #3E2723;
+            font-weight: bold;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #8D6E63;
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+        }
+
+        /* Team Grid */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .team-member {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .member-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            background-color: #D7CCC8; /* Placeholder color */
+        }
+
+        .member-name {
+            color: #3E2723;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .member-id {
+            color: #A1887F;
+            font-size: 0.8rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Spinner Kecil di bawah */
+        .loader {
+            margin-top: 40px;
+            color: #8D6E63;
+        }
     </style>
 </head>
 <body>
-    <div class="splash-logo">
-        <h1 style="color: #8D6E63; font-weight: bold;">Luxelle Bakery</h1>
-        <div class="spinner-border text-brown" style="color: #8D6E63;" role="status"></div>
+
+    <div class="splash-container">
+        <div class="logo-circle">
+            <i class="fas fa-bread-slice"></i>
+        </div>
+
+        <h1>Luxelle Bakery</h1>
+        <div class="subtitle">Meet Our Expert Team</div>
+
+        <div class="team-grid">
+            <div class="team-member">
+                <img src="assets/diera.jpeg" class="member-photo" alt="Diera">
+                <div class="member-name">Diera Syafira Parinissa</div>
+                <div class="member-id">101012340096</div>
+            </div>
+            <div class="team-member">
+                <img src="assets/citra.jpg" class="member-photo" alt="Citra">
+                <div class="member-name">Citra Kusumadewi Sribawono</div>
+                <div class="member-id">101012340196</div>
+            </div>
+            <div class="team-member">
+                <img src="assets/aul.jpeg" class="member-photo" alt="Aulia">
+                <div class="member-name">Aulia Rahma</div>
+                <div class="member-id">101012340340</div>
+            </div>
+            <div class="team-member">
+                <img src="assets/stev.jpg" class="member-photo" alt="Stevannie">
+                <div class="member-name">Stevannie Pratama</div>
+                <div class="member-id">101012340343</div>
+            </div>
+        </div>
+
+        <div class="loader">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,22 +150,35 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         async function checkSession() {
-            // Simulasi SplashScreen (seperti di main.dart)
+            // Tunda 3 detik untuk memberikan waktu user melihat expert team
             setTimeout(async () => {
-                const { data: { session } } = await _supabase.auth.getSession();
-                if (session) {
-                    // Cek role untuk menentukan dashboard
-                    const { data: profile } = await _supabase.from('profiles').select('role').eq('user_id', session.user.id).single();
-                    if (profile?.role.toLowerCase() === 'admin') {
-                        window.location.href = 'admin_dashboard.html';
+                try {
+                    const { data: { session }, error } = await _supabase.auth.getSession();
+                    
+                    if (session) {
+                        // Ambil profil user
+                        const { data: profile } = await _supabase
+                            .from('profiles')
+                            .select('role')
+                            .eq('user_id', session.user.id)
+                            .single();
+
+                        if (profile?.role?.toLowerCase() === 'admin') {
+                            window.location.href = 'admin_dashboard.html';
+                        } else {
+                            window.location.href = 'user_dashboard.html';
+                        }
                     } else {
-                        window.location.href = 'user_dashboard.html';
+                        // Jika tidak ada session, arahkan ke login
+                        window.location.href = 'login.html';
                     }
-                } else {
+                } catch (e) {
+                    console.error("Error checking session:", e);
                     window.location.href = 'login.html';
                 }
-            }, 2000); // Tunda 2 detik untuk efek splash
+            }, 10000); 
         }
+
         checkSession();
     </script>
 </body>
