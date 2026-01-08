@@ -9,9 +9,20 @@
     <style>
         body { background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8); min-height: 100vh; }
         .login-card { border-radius: 20px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-luxelle { background-color: #8D6E63; color: white; border-radius: 20px; border: none; padding: 10px; }
+        .btn-luxelle { background-color: #8D6E63; color: white; border-radius: 20px; border: none; padding: 12px; }
         .btn-luxelle:hover { background-color: #6D4C41; color: white; }
-        .form-control { border-radius: 15px; padding: 12px; }
+        .form-control { border-radius: 15px; padding: 12px; border: 1px solid #EFEBE9; }
+        
+        .forgot-password-link {
+            color: #A1887F;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+        .forgot-password-link:hover {
+            color: #8D6E63;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body class="d-flex align-items-center">
@@ -21,7 +32,7 @@
                 <div class="card login-card p-4">
                     <div class="text-center mb-4">
                         <div class="bg-light d-inline-block p-3 rounded-circle mb-3">
-                            <i class="fas fa-bakery-dining fa-3x" style="color: #8D6E63;"></i>
+                            <i class="fas fa-bread-slice fa-3x" style="color: #8D6E63;"></i>
                         </div>
                         <h2 class="fw-bold" style="color: #3E2723;">Welcome Back</h2>
                         <p class="text-muted">Sign in to your Luxelle account</p>
@@ -33,12 +44,16 @@
                         <label class="form-label small fw-bold">Email</label>
                         <input type="email" id="email" class="form-control" placeholder="you@example.com">
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="form-label small fw-bold">Password</label>
                         <input type="password" id="password" class="form-control" placeholder="••••••••">
                     </div>
+
+                    <div class="text-end mb-4">
+                        <a href="forgot_password.html" class="forgot-password-link">Forgot password?</a>
+                    </div>
                     
-                    <button id="login-btn" onclick="handleLogin()" class="btn btn-luxelle w-100 fw-bold">Sign In</button>
+                    <button id="login-btn" onclick="handleLogin()" class="btn btn-luxelle w-100 fw-bold shadow-sm">Sign In</button>
 
                     <div class="text-center mt-4">
                         <p class="small text-muted">Don't have an account? <a href="register.html" style="color: #8D6E63; text-decoration: none; font-weight: bold;">Sign up</a></p>
@@ -60,26 +75,28 @@
             const btn = document.getElementById('login-btn');
             const errorBox = document.getElementById('error-box');
 
+            if(!email || !password) {
+                errorBox.innerText = "Please enter both email and password.";
+                errorBox.classList.remove('d-none');
+                return;
+            }
+
             btn.disabled = true;
             btn.innerText = "Signing in...";
             errorBox.classList.add('d-none');
 
             try {
-                // 1. Proses Login (seperti di loginPage.dart)
                 const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
 
-                // 2. Fetch Role & Name (seperti di loginPage.dart baris 57)
                 const { data: profile } = await _supabase
                     .from('profiles')
                     .select('role, name')
                     .eq('user_id', data.user.id)
                     .single();
 
-                // 3. Update Last Login (seperti di loginPage.dart baris 44)
                 await _supabase.from('profiles').update({ last_login: new Date().toISOString() }).eq('user_id', data.user.id);
 
-                // 4. Navigasi Berdasarkan Role
                 const role = profile?.role?.toLowerCase() || 'customer';
                 if (role === 'admin') {
                     window.location.href = 'admin_dashboard.html';

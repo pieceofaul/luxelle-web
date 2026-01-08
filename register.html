@@ -6,17 +6,153 @@
     <title>Register - Luxelle Bakery</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8); min-height: 100vh; display: flex; align-items: center; }
-        .register-card { border-radius: 20px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
-        .btn-luxelle { background-color: #8D6E63; color: white; border-radius: 20px; border: none; padding: 12px; font-weight: bold; }
-        .btn-luxelle:hover { background-color: #6D4C41; color: white; }
-        .form-control { border-radius: 15px; padding: 10px; border: 1px solid #EFEBE9; }
-        .role-selector { background: #F3EFEA; border-radius: 30px; padding: 5px; display: flex; }
-        .role-btn { flex: 1; border: none; background: none; padding: 8px; border-radius: 25px; transition: 0.3s; color: #6D4C41; }
-        .role-btn.active { background: white; color: #3E2723; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        body { 
+            background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+        }
+        .register-card { 
+            border-radius: 20px; 
+            border: none; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 450px; 
+        }
+        .btn-luxelle { 
+            background-color: #8D6E63; 
+            color: white; 
+            border-radius: 20px; 
+            border: none; 
+            padding: 12px; 
+            font-weight: bold; 
+        }
+        .btn-luxelle:hover { 
+            background-color: #6D4C41; 
+            color: white; 
+        }
+        .btn-luxelle:disabled {
+            background-color: #BCAAA4;
+            cursor: not-allowed;
+        }
+        .form-control { 
+            border-radius: 15px; 
+            padding: 10px; 
+            border: 1px solid #EFEBE9; 
+        }
+        .form-control:focus {
+            border-color: #8D6E63;
+            box-shadow: 0 0 0 0.2rem rgba(141, 110, 99, 0.25);
+        }
+        .role-selector { 
+            background: #F3EFEA; 
+            border-radius: 30px; 
+            padding: 5px; 
+            display: flex; 
+        }
+        .role-btn { 
+            flex: 1; 
+            border: none; 
+            background: none; 
+            padding: 8px; 
+            border-radius: 25px; 
+            transition: 0.3s; 
+            color: #6D4C41; 
+            cursor: pointer;
+        }
+        .role-btn.active { 
+            background: white; 
+            color: #3E2723; 
+            font-weight: bold; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        .otp-modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .otp-header {
+            background: linear-gradient(to bottom right, #FBF8F3, #FFF8DC, #D7CCC8);
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(141, 110, 99, 0.2);
+        }
+        .otp-input-group {
+            margin: 20px 0;
+        }
+        .otp-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #E0D7D3;
+            border-radius: 16px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 8px;
+            background-color: #F3EFEA;
+        }
+        .otp-input:focus {
+            border-color: #8D6E63;
+            outline: none;
+        }
+        .otp-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .otp-cancel-btn {
+            flex: 1;
+            background-color: white;
+            color: #8D6E63;
+            border: 1px solid #8D6E63;
+            border-radius: 20px;
+            padding: 10px;
+        }
+        .otp-verify-btn {
+            flex: 1;
+            background-color: #8D6E63;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
+    <div class="modal fade" id="otpModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content otp-modal-content">
+                <div class="otp-header">
+                    <h5 class="fw-bold mb-2" style="color: #3E2723;">Email Verification</h5>
+                    <p class="small text-muted mb-0">
+                        Enter the verification code sent to your email.
+                    </p>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="otp-error" class="alert alert-danger d-none small p-2 mb-3"></div>
+                    
+                    <div class="otp-input-group">
+                        <input
+                            type="text"
+                            id="otp-code"
+                            maxlength="6"
+                            class="otp-input"
+                            placeholder="000000"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                        />
+                    </div>
+                    
+                    <div class="otp-buttons">
+                        <button type="button" class="otp-cancel-btn" onclick="cancelOtp()">
+                            Cancel
+                        </button>
+                        <button type="button" class="otp-verify-btn" id="verifyBtn" onclick="verifyOTP()">
+                            Verify
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container d-flex justify-content-center">
         <div class="card register-card p-4">
             <div class="text-center mb-3">
@@ -24,7 +160,7 @@
                 <p class="text-muted small">Join Luxelle Bakery</p>
             </div>
 
-            <div id="error-box" class="alert alert-danger d-none small p-2"></div>
+            <div id="error-box" class="alert alert-danger d-none small p-2 mb-3"></div>
 
             <div class="mb-2">
                 <label class="small fw-bold mb-1">Full Name</label>
@@ -64,11 +200,19 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script>
-        const _supabase = supabase.createClient('https://bnjjclwlxlrtduupunfw.supabase.co', 'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9');
+        // Initialize Supabase
+        const _supabase = supabase.createClient(
+            'https://bnjjclwlxlrtduupunfw.supabase.co', 
+            'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9'
+        );
         
         let selectedRole = 'Customer';
+        let registrationData = {};
+        let bootstrapOtpModal = null;
 
         function setRole(role, btn) {
             selectedRole = role;
@@ -76,59 +220,143 @@
             btn.classList.add('active');
         }
 
+        function showError(msg, elementId = 'error-box') {
+            const errorBox = document.getElementById(elementId);
+            errorBox.innerText = msg;
+            errorBox.classList.remove('d-none');
+        }
+
+        function hideError(elementId = 'error-box') {
+            const errorBox = document.getElementById(elementId);
+            errorBox.classList.add('d-none');
+        }
+
+        // FUNGSI REGISTRASI (KIRIM OTP VIA SIGNUP)
         async function handleRegister() {
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
             const password = document.getElementById('reg-password').value;
             const confirm = document.getElementById('reg-confirm').value;
             const agree = document.getElementById('agree-check').checked;
-            const errorBox = document.getElementById('error-box');
             const btn = document.getElementById('reg-btn');
 
-            // Validasi Sederhana (Mirip registerPage.dart baris 26-40)
-            if (!name || !email || !password || !confirm) return showError("All fields must be filled.");
-            if (password !== confirm) return showError("Passwords do not match.");
-            if (!agree) return showError("You must agree to the terms.");
+            if (!name || !email || !password || !confirm) {
+                showError("All fields must be filled.");
+                return;
+            }
+            if (password !== confirm) {
+                showError("Passwords do not match.");
+                return;
+            }
+            if (!agree) {
+                showError("You must agree to the terms and conditions.");
+                return;
+            }
 
             btn.disabled = true;
-            btn.innerText = "Creating account...";
-            errorBox.classList.add('d-none');
+            btn.innerText = "Sending OTP...";
+            hideError();
 
             try {
-                // Proses Sign Up
-                const { data, error } = await _supabase.auth.signUp({ 
-                    email: email, 
-                    password: password 
+                // Gunakan signUp agar tipe OTP yang dikirim adalah 'signup'
+                const { data, error } = await _supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            role: selectedRole
+                        }
+                    }
                 });
 
                 if (error) throw error;
 
-                // Masukkan data ke tabel profiles (Mirip registerPage.dart baris 91-97)
-                const { error: profError } = await _supabase.from('profiles').insert({
-                    user_id: data.user.id,
-                    name: name,
-                    email: email,
-                    role: selectedRole,
-                    created_at: new Date().toISOString()
-                });
+                // Simpan data sementara untuk verifikasi
+                registrationData = { name, email, password, role: selectedRole };
 
-                if (profError) throw profError;
-
-                alert("Registration successful! Please log in.");
-                window.location.href = 'login.html';
+                // Tampilkan Modal
+                bootstrapOtpModal = new bootstrap.Modal(document.getElementById('otpModal'));
+                bootstrapOtpModal.show();
+                
+                document.getElementById('otp-code').value = '';
+                hideError('otp-error');
+                
+                btn.disabled = false;
+                btn.innerText = "Create Account";
 
             } catch (err) {
-                showError(err.message);
+                console.error('Registration error:', err);
+                showError(err.message || "Failed to start registration.");
                 btn.disabled = false;
                 btn.innerText = "Create Account";
             }
         }
 
-        function showError(msg) {
-            const errorBox = document.getElementById('error-box');
-            errorBox.innerText = msg;
-            errorBox.classList.remove('d-none');
+        // FUNGSI VERIFIKASI OTP
+        async function verifyOTP() {
+            const otpCode = document.getElementById('otp-code').value.trim();
+            const verifyBtn = document.getElementById('verifyBtn');
+
+            if (otpCode.length !== 6) {
+                showError("Please enter a valid 6-digit OTP.", 'otp-error');
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying...";
+            hideError('otp-error');
+
+            try {
+                // Verifikasi OTP dengan tipe 'signup'
+                const { data, error } = await _supabase.auth.verifyOtp({
+                    email: registrationData.email,
+                    token: otpCode,
+                    type: 'signup'
+                });
+
+                if (error) throw error;
+
+                const user = data.user;
+                if (!user) throw new Error('User creation failed.');
+
+                // Masukkan data ke tabel profiles (Opsional jika Anda pakai Trigger di DB)
+                const { error: profileError } = await _supabase
+                    .from('profiles')
+                    .insert({
+                        user_id: user.id,
+                        name: registrationData.name,
+                        email: registrationData.email,
+                        role: registrationData.role
+                    });
+
+                if (profileError) console.error('Profile insert error:', profileError);
+
+                bootstrapOtpModal.hide();
+                alert("Registration successful! You can now login.");
+                window.location.href = 'login.html';
+
+            } catch (err) {
+                console.error('OTP verification error:', err);
+                showError("Invalid or expired OTP. Please try again.", 'otp-error');
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Verify";
+            }
         }
+
+        function cancelOtp() {
+            if (bootstrapOtpModal) bootstrapOtpModal.hide();
+            registrationData = {};
+        }
+
+        // Event Listeners
+        document.getElementById('otp-code').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyOTP();
+        });
+
+        document.getElementById('otpModal').addEventListener('shown.bs.modal', () => {
+            document.getElementById('otp-code').focus();
+        });
     </script>
 </body>
 </html>
