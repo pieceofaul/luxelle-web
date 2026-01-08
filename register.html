@@ -231,7 +231,9 @@
             errorBox.classList.add('d-none');
         }
 
-        // FUNGSI REGISTRASI (KIRIM OTP VIA SIGNUP)
+        // ==========================================
+        // 1. REGISTER — SEND OTP EMAIL (Mengikuti Logika Flutter _register)
+        // ==========================================
         async function handleRegister() {
             const name = document.getElementById('reg-name').value.trim();
             const email = document.getElementById('reg-email').value.trim();
@@ -240,6 +242,7 @@
             const agree = document.getElementById('agree-check').checked;
             const btn = document.getElementById('reg-btn');
 
+            // Validasi Input (Flutter line 46-60)
             if (!name || !email || !password || !confirm) {
                 showError("All fields must be filled.");
                 return;
@@ -258,24 +261,20 @@
             hideError();
 
             try {
-                // Gunakan signUp agar tipe OTP yang dikirim adalah 'signup'
-                const { data, error } = await _supabase.auth.signUp({
+                // LOGIKA FLUTTER (Flutter line 72): signInWithOtp dengan shouldCreateUser
+                const { error } = await _supabase.auth.signInWithOtp({
                     email: email,
-                    password: password,
                     options: {
-                        data: {
-                            full_name: name,
-                            role: selectedRole
-                        }
+                        shouldCreateUser: true
                     }
                 });
 
                 if (error) throw error;
 
-                // Simpan data sementara untuk verifikasi
+                // Simpan data untuk proses selanjutnya (Flutter line 74)
                 registrationData = { name, email, password, role: selectedRole };
 
-                // Tampilkan Modal
+                // Tampilkan Modal (Flutter line 74)
                 bootstrapOtpModal = new bootstrap.Modal(document.getElementById('otpModal'));
                 bootstrapOtpModal.show();
                 
@@ -287,13 +286,15 @@
 
             } catch (err) {
                 console.error('Registration error:', err);
-                showError(err.message || "Failed to start registration.");
+                showError(err.message || "Failed to send OTP email.");
                 btn.disabled = false;
                 btn.innerText = "Create Account";
             }
         }
 
-        // FUNGSI VERIFIKASI OTP
+        // ==========================================
+        // 2. OTP VERIFICATION (Mengikuti Logika Flutter submitOtp)
+        // ==========================================
         async function verifyOTP() {
             const otpCode = document.getElementById('otp-code').value.trim();
             const verifyBtn = document.getElementById('verifyBtn');
@@ -308,37 +309,47 @@
             hideError('otp-error');
 
             try {
-                // Verifikasi OTP dengan tipe 'signup'
+                // VERIFY OTP (Flutter line 94)
                 const { data, error } = await _supabase.auth.verifyOtp({
                     email: registrationData.email,
                     token: otpCode,
-                    type: 'signup'
+                    type: 'signup' // Tetap 'signup' karena pemicunya shouldCreateUser
                 });
 
                 if (error) throw error;
 
                 const user = data.user;
-                if (!user) throw new Error('User creation failed.');
+                if (!user) throw new Error('User not found');
 
-                // Masukkan data ke tabel profiles (Opsional jika Anda pakai Trigger di DB)
+                // SET PASSWORD (Flutter line 105)
+                const { error: updateError } = await _supabase.auth.updateUser({
+                    password: registrationData.password
+                });
+
+                if (updateError) throw updateError;
+
+                // INSERT PROFILE (Flutter line 108-114)
                 const { error: profileError } = await _supabase
                     .from('profiles')
                     .insert({
                         user_id: user.id,
                         name: registrationData.name,
                         email: registrationData.email,
-                        role: registrationData.role
+                        role: registrationData.role,
+                        created_at: new Date().toISOString()
                     });
 
-                if (profileError) console.error('Profile insert error:', profileError);
+                if (profileError) {
+                    console.error('Profile insert error:', profileError);
+                }
 
                 bootstrapOtpModal.hide();
-                alert("Registration successful! You can now login.");
+                alert("Registration successful! Please log in.");
                 window.location.href = 'login.html';
 
             } catch (err) {
                 console.error('OTP verification error:', err);
-                showError("Invalid or expired OTP. Please try again.", 'otp-error');
+                showError(err.message || "Invalid or expired OTP.", 'otp-error');
                 verifyBtn.disabled = false;
                 verifyBtn.innerText = "Verify";
             }
@@ -349,7 +360,6 @@
             registrationData = {};
         }
 
-        // Event Listeners
         document.getElementById('otp-code').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') verifyOTP();
         });

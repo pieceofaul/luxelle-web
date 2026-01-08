@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile - Luxelle Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --luxelle-brown: #8D6E63;
+            --luxelle-bg: #FBF8F3;
+        }
+        body { 
+            background: linear-gradient(to bottom, #FBF8F3, #F3EFEA); 
+            min-height: 100vh; 
+            padding-bottom: 100px;
+        }
+
+        .profile-header {
+            text-align: center;
+            padding-top: 50px;
+            margin-bottom: 30px;
+        }
+
+        .profile-img-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .profile-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .badge-admin {
+            background-color: #FF5252;
+            color: white;
+            padding: 8px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 8px rgba(255, 82, 82, 0.3);
+        }
+
+        /* Card Info Style */
+        .info-card {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            margin: 0 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .info-label {
+            color: #BDBDBD;
+            font-size: 16px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Logout Button Style */
+        .btn-logout {
+            background: transparent;
+            border: 1.5px solid #8D6E63;
+            color: #8D6E63;
+            border-radius: 30px;
+            padding: 12px;
+            width: calc(100% - 40px);
+            margin: 40px 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .btn-logout:hover {
+            background-color: #8D6E63;
+            color: white;
+        }
+
+        .btn-logout i {
+            margin-right: 10px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; background: white;
+            display: flex; justify-content: space-around; padding: 12px 0;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05); z-index: 1000;
+        }
+        .nav-link-custom { text-align: center; color: #BDBDBD; text-decoration: none; font-size: 11px; flex: 1; }
+        .nav-link-custom.active { color: var(--luxelle-brown); font-weight: bold; }
+        .nav-link-custom i { font-size: 20px; margin-bottom: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-header">
+        <div class="profile-img-container">
+            <img id="admin-avatar" src="https://via.placeholder.com/150" alt="Profile Photo">
+        </div>
+        <div class="badge-admin">ADMIN</div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-row">
+            <div class="info-label">Full Name</div>
+            <div class="info-value" id="disp-name">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Email</div>
+            <div class="info-value" id="disp-email">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Role</div>
+            <div class="info-value" id="disp-role">ADMIN</div>
+        </div>
+        <div class="info-row" style="margin-bottom: 0;">
+            <div class="info-label">Last Login</div>
+            <div class="info-value" id="disp-login">-</div>
+        </div>
+    </div>
+
+    <button class="btn-logout" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+
+    <div class="bottom-nav">
+        <a href="admin_dashboard.html" class="nav-link-custom"><i class="fas fa-th-large"></i>Home</a>
+        <a href="adminPreOrdersPage.html" class="nav-link-custom"><i class="fas fa-receipt"></i>Orders</a>
+        <a href="adminMenuPage.html" class="nav-link-custom"><i class="fas fa-birthday-cake"></i>Menu</a>
+        <a href="adminAccountPage.html" class="nav-link-custom"><i class="fas fa-users"></i>Users</a>
+        <a href="#" class="nav-link-custom active"><i class="fas fa-user"></i>Profile</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const _supabase = supabase.createClient(
+            'https://bnjjclwlxlrtduupunfw.supabase.co', 
+            'sb_publishable_JL8x0bo17UvFdojemnZipw_CBSYxfY9'
+        );
+
+        async function loadProfile() {
+            try {
+                // Ambil session user yang sedang login
+                const { data: { user } } = await _supabase.auth.getUser();
+                
+                if (user) {
+                    // Ambil data dari tabel profiles
+                    const { data: profile, error } = await _supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .single();
+
+                    if (profile) {
+                        document.getElementById('disp-name').innerText = profile.name || 'Admin';
+                        document.getElementById('disp-email').innerText = profile.email || user.email;
+                        document.getElementById('disp-role').innerText = (profile.role || 'ADMIN').toUpperCase();
+                        
+                        // Format Last Login
+                        if (profile.last_login) {
+                            const date = new Date(profile.last_login);
+                            const formattedDate = date.toISOString().split('T')[0] + ' ' + 
+                                                date.toTimeString().split(' ')[0].substring(0,5);
+                            document.getElementById('disp-login').innerText = formattedDate;
+                        }
+
+                        // Set Avatar jika ada
+                        if (profile.avatar_url) {
+                            document.getElementById('admin-avatar').src = profile.avatar_url;
+                        }
+                    }
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                console.error("Error loading profile:", err);
+            }
+        }
+
+        async function handleLogout() {
+            if (confirm("Are you sure you want to logout?")) {
+                const { error } = await _supabase.auth.signOut();
+                if (!error) {
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        window.onload = loadProfile;
+    </script>
+</body>
+</html>
